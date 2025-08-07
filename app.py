@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit
 import secrets
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = secrets.token_hex(16)  # Generates a random 32-character hex string
+app.config['SECRET_KEY'] = secrets.token_hex(16)
 
 socketio = SocketIO(app)
 
@@ -75,13 +75,12 @@ def un_mute_client(data):
 
 @socketio.on('send_message')
 def handle_message(data):
-    emit('receive_message', data, broadcast=True)  # Broadcast to all clients, including the host
+    emit('receive_message', data, broadcast=True)
 
 
 @socketio.on('connect')
 def handle_connect():
     nickname = request.args.get('nickname')
-    print(clients)
     if nickname:
         emit('room_client_list', clients, broadcast=True)
         emit('feedback', {'message': f"{nickname} has connected."}, broadcast=True)
@@ -93,7 +92,6 @@ def handle_disconnect():
     if nickname in clients:
         del clients[nickname]
         emit('room_client_list', clients, broadcast=True)
-        print(clients)
         emit('feedback', {'message': f"{nickname} has disconnected."}, broadcast=True)
         
 @app.before_request
