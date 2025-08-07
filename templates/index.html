@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Network Events</title>
+    
+</head>
+<body class="index">
+    <h1>Welcome to Network Events</h1>
+    <div class="toggle-buttons">
+        <button onclick="showHostForm()">Host</button>
+        <button onclick="showJoinForm()">Join</button>
+    </div>
+    <div id="host-form" class="form-container">
+        <form action="/host" method="post">
+            <h2>Host</h2>
+            <input type="text" name="nickname" placeholder="Nickname" required>
+            <input type="text" name="secret_key" placeholder="Secret Key" required id="secret-key">
+            <input type="text" name="room_id" placeholder="Room ID" readonly id="room_id">
+            <button type="submit" onclick="saveSecrateKey()">Host</button>
+        </form>
+    </div>
+    <div id="join-form" class="form-container">
+        <form action="/join" method="post">
+            <h2>Join</h2>
+            <input type="text" name="nickname" placeholder="Nickname" required>
+            <input type="text" name="secret_key" placeholder="Secret Key" required id="secret-key">
+            <input type="text" name="room_id" placeholder="Room ID" required>
+            <button type="submit" onclick="saveSecretKey()">Join</button>
+        </form>
+    </div>
+
+    <script>
+        function showHostForm() {
+            document.getElementById('host-form').style.display = 'flex';
+            document.getElementById('join-form').style.display = 'none';
+            document.getElementById('room_id').value = '{{ room_id }}';
+        }
+
+        function showJoinForm() {
+            document.getElementById('join-form').style.display = 'flex';
+            document.getElementById('host-form').style.display = 'none';
+        }
+
+        // Show the host form by default
+        showHostForm();
+        
+        function saveSecretKey() {
+            localStorage.setItem('secreteKey', document.getElementById('secret-key').value);
+        }
+
+    </script>
+</body>
+</html>

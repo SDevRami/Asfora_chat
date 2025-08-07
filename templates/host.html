@@ -1,0 +1,286 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Host Dashboard</title>
+</head>
+<header>
+    <h1>Host - {{ nickname }}</h1>
+    <p>Room ID: {{ room_id }}</p>
+    <p id="client-number">Connected Clients: {{ clients|length }}</p>
+    <button id="menu-button" onclick="togglePopup()" style="font-weight: bold;">☰</button>
+    
+    <div id="popup" style="display: none;">
+        <div id="popup_btn">
+            <button onclick="closeSession()">Close Room</button>
+            <button onclick="closePopup()">X</button> 
+        </div>
+        <div id="popup_btn">
+            <input type="text" name="secret_key" placeholder="Change Secret Key" id="secretkey">
+            <button onclick="changeSecretKey()">Save New Key</button> 
+        </div>
+        <h3>Client List</h3>
+        <ul id="client-list">
+            {% for client in clients %}
+                <li>
+                    {% if client == nickname %}
+                        <strong>(You) {{ client }}</strong>
+                    {% else %}
+                        <button onclick="kickClient('{{ client }}')" style="width:20%;">kick</button>
+                        <button value="false" id="clnt_btn_{{ client_number }}" onclick="muteClient('{{ client }}', 'clnt_btn_{{ client_number }}')" style="width:20%;">mute</button>
+                        - {{ client }}
+                    {% endif %}
+                </li>
+                {% set client_number = client_number + 1 %}
+            {% endfor %}
+        </ul>
+
+        <div id="feedback"></div>
+</header>
+<body>
+    <div id="chat">
+        <div id="messages" style="display: flex; flex-direction: column;">
+            <!-- Messages will be appended here -->
+        </div>
+    </div>
+
+    <footer>
+        <div id="replay_messages"></div>
+        <div id="chat_inputs">
+            <textarea id="message" placeholder="Type a message..."></textarea>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </footer>
+                
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+    <script>
+        const secretKey = localStorage.getItem('secreteKey');
+        
+        function togglePopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+        }
+
+        function closePopup() {
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        const socket = io();
+
+        // Listen for new client connections
+        socket.on('room_client_list', function(data) {
+            const clientList = document.getElementById('client-list');
+            const clientNumber = document.getElementById('client-number');
+            const room_id = '{{ room_id }}';
+
+            clientList.innerHTML = '';
+
+            const room_clients = {};
+            for (const nickname in data) {
+                if (data[nickname].room_id === room_id) {
+                    room_clients[nickname] = {'room_id': room_id};
+                }
+            }
+            let client_number = 1;
+
+            for (const client of Object.keys(room_clients)) {
+                if (client === '{{ nickname }}') {
+                    clientList.innerHTML += `<li>(You) ${client}</li>`;
+                } else {
+                    clientList.innerHTML += `
+                        <li>
+                            ${client_number} - 
+                            <button onclick="kickClient('${client.replace(/'/g, "\\'")}')" style="width:20%;">kick</button>
+                            <button value="false" id="clnt_btn_${client_number}" onclick="muteClient('${client.replace(/'/g, "\\'")}', 'clnt_btn_${client_number}')" style="width:20%;">mute</button> - ${client}
+                        </li>`;
+                    client_number += 1;
+                }
+            }
+            clientNumber.innerHTML = `Connected Clients: ${Object.keys(data).length}`
+        });
+
+        // Listen for feedback messages
+        socket.on('feedback', function(data) {
+            const feedback = document.getElementById('feedback');
+            feedback.innerHTML += `<p>${data.message}</p>`;
+        });
+
+        // Listen for messages from clients
+        socket.on('receive_message', function(data) {
+            if (data.roomid === '{{ room_id }}') {
+                const messages = document.getElementById('messages');
+                const messageElement = document.createElement('div');
+                // Create a div for the message content
+                const messageContent = document.createElement('div');
+                const decryptedMessage = CryptoJS.AES.decrypt(data.message, secretKey).toString(CryptoJS.enc.Utf8);
+
+                messageElement.style.margin = '5px';
+                messageElement.style.padding = '10px';
+                messageElement.style.borderRadius = '10px';
+                messageElement.style.maxWidth = '70%';
+                messageElement.style.wordWrap = 'break-word';
+
+                if (data.nickname === '{{ nickname }}') {
+                    messageElement.style.backgroundColor = '#00ffaa'; // Outgoing message color
+                    messageElement.style.alignSelf = 'flex-start';
+                    messageElement.style.color = 'black';
+                } else {
+                    messageElement.style.backgroundColor = '#1e1e1e'; // Incoming message color
+                    messageElement.style.alignSelf = 'flex-end';
+                    messageElement.style.color = 'white';
+                };
+                messageElement.addEventListener('click', e => {
+                    replayMessage(data.nickname, decryptedMessage);
+                });
+            
+                messageContent.innerHTML = `<strong>${data.nickname}</strong><br>${decryptedMessage}`;
+                
+                // Create a span for the timestamp
+                const timestamp = document.createElement('span');
+                timestamp.style.fontSize = '10px';
+                timestamp.style.display = 'block';
+                timestamp.style.marginTop = '5px';
+                timestamp.style.textAlign = 'right'; 
+                timestamp.style.width = '100%';
+                timestamp.innerText = data.timestamp;
+
+                // Append message content and timestamp to the message element
+                messageElement.appendChild(messageContent);
+                messageElement.appendChild(timestamp);
+                
+                messages.appendChild(messageElement);
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        });
+
+
+        socket.on('closesession', function(data) {
+            localStorage.clear();
+            window.location.href = '/';
+        });
+
+        let replay_message = false;
+        let replay_message_nickname = '';
+        let replay_message_message = '';
+
+        function cancel_replay() {
+            replay_message = false;
+            replay_message_nickname = '';
+            replay_message_message = '';
+            document.getElementById('replay_messages').innerHTML = '';
+        }
+
+        function replayMessage(nickname, message) {
+            cancel_replay();
+            replay_message = true;
+            message_lines = message.split('\n');
+            
+            if ( message_lines.length > 1 ) {
+                message_lines.shift();
+            }
+            let message_replay = message_lines.join('\n');
+            replay_message_message = message_replay;
+            replay_message_nickname = nickname;
+            const replayMessageElement = document.createElement('div');
+            replayMessageElement.style.margin = '5px';
+            replayMessageElement.style.padding = '10px';
+            replayMessageElement.style.borderRadius = '10px';
+            replayMessageElement.style.Width = '30%';
+            replayMessageElement.style.wordWrap = 'break-word';
+            replayMessageElement.style.backgroundColor = '#00ffaa'; // Outgoing message color
+            replayMessageElement.style.alignSelf = 'flex-start';
+            replayMessageElement.style.color = 'black';
+            replayMessageElement.innerHTML = `<strong>${nickname}</strong><br>${message_replay}`;
+            const cancelReplayBtn = document.createElement('button');
+            cancelReplayBtn.style.backgroundColor = 'red';
+            cancelReplayBtn.style.color = 'white';
+            cancelReplayBtn.style.border = 'none';
+            cancelReplayBtn.addEventListener('click', cancel_replay);
+            cancelReplayBtn.innerText = 'x';
+            document.getElementById('replay_messages').appendChild(cancelReplayBtn);
+            document.getElementById('replay_messages').appendChild(replayMessageElement);
+        }
+
+        function sendMessage() {
+            const roomid = '{{ room_id }}';
+            const message = document.getElementById('message').value;
+            const nickname = '{{ nickname }}'; 
+            const timestamp = new Date().toLocaleTimeString(); 
+            let message_text = message;
+            if (replay_message) {
+                message_text =`<pre><code>${replay_message_nickname}: ${replay_message_message}</code></pre>\n${message}`;
+                replay_message = false;
+                replay_message_nickname = '';
+                replay_message_message = '';
+                document.getElementById('replay_messages').innerHTML = '';
+            }
+            const encryptedMessage = CryptoJS.AES.encrypt(message_text, secretKey).toString();
+
+            // Emit the message with additional data
+            socket.emit('send_message', { 
+                roomid: roomid,
+                message: encryptedMessage, 
+                nickname: nickname, 
+                timestamp: timestamp 
+            });
+            document.getElementById('message').value = '';
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function closeSession() {
+            const roomid = '{{ room_id }}';
+            const nickname = '{{ nickname }}'; 
+
+            socket.emit('close_session', {
+                roomid: roomid,
+                nickname: nickname
+            });
+        }
+
+        function kickClient(client) {
+            const roomid = '{{ room_id }}';
+            const nickname = client;
+            socket.emit('kick_client', {
+                roomid: roomid,
+                nickname: nickname
+            });
+        }
+
+        function muteClient(client, id) {
+            const clnt_btn = document.getElementById(`${id}`);
+            const roomid = '{{ room_id }}';
+            const nickname = client;
+            if (clnt_btn.value == 'false') {
+                socket.emit('mute_client', {
+                    roomid: roomid,
+                    nickname: nickname
+                });
+                clnt_btn.value = 'true';
+                clnt_btn.innerText = 'UnMute';
+            } else {
+                socket.emit('un_mute_client', {
+                    roomid: roomid,
+                    nickname: nickname
+                });
+                clnt_btn.innerText = 'Mute';
+                clnt_btn.value = 'false';
+            }
+            
+        }
+
+        function changeSecretKey() {
+            localStorage.clear();
+            localStorage.setItem('secreteKey', document.getElementById('secretkey').value);
+        }
+    </script>
+</body>
+</html>

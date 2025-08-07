@@ -1,0 +1,204 @@
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.index{
+    align-items: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.form-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: none; /* Hide by default */
+}
+
+.form-container h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.form-container button {
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .form-container {
+        width: 90%;
+    }
+}
+
+header {
+    height: 50px; /* Increased height for better visibility */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    display: flex; /* Use flexbox for layout */
+    align-items: center; /* Center items vertically */
+    justify-content: space-between; /* Space items evenly */
+    background-color: #1e1e1e;
+    color: white; /* Set text color to white for better contrast */
+}
+
+#menu-button {
+    width: 30px;
+    border: none; /* Remove border */
+    padding: 5px 10px; /* Add padding */
+    cursor: pointer; /* Change cursor on hover */
+    border-radius: 5px; /* Rounded corners */
+}
+
+#popup {
+    height: 70%;
+    width: 70%;
+    position: fixed; /* Position the popup */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust position */
+    border: 1px solid #00ffaa;
+    padding: 20px; /* Padding inside the popup */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+    z-index: 1000; /* Ensure popup is above other elements */
+    background-color: #1e1e1e;
+}
+
+#popup_btn {
+    padding: 20px;
+    gap: 10px;
+    height: 30px;
+    display: flex; /* Use flexbox for layout */
+    align-items: center; /* Center items vertically */
+    justify-content: space-between; /* Space items evenly */
+}
+
+#popup_btn button {
+    width: 30%;
+}
+
+#client-list {
+    list-style-type: none; /* Remove bullet points */
+    padding: 0; /* Remove padding */
+}
+
+.toggle-buttons {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.toggle-buttons button {
+    flex: 1;
+    margin: 0 5px;
+}
+
+#chat {
+    width: 100%;
+    height: 100%;
+    margin-top: 80px;
+}
+#messages {
+    padding: 10px 0 80px 10px;
+}
+#message {
+    border-radius: 8px;
+}
+#replay_messages {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+pre {
+    background-color: #1e1e1e; /* Dark gray background for the code block */
+    border: 1px solid #333; /* Darker border */
+    border-radius: 4px; /* Rounded corners */
+    padding: 10px; /* Padding around the text */
+    overflow: auto; /* Enable scrolling for long code */
+    white-space: pre-wrap; /* Wrap long lines */
+    font-family: 'Courier New', Courier, monospace; /* Monospace font */
+    font-size: 14px; /* Font size */
+}
+code {
+    color: white; /* Color for code text */
+    font-weight: bold; /* Bold text */
+}
+#chat_inputs {
+    align-items: center;
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    padding: 10px;
+    gap: 10px;
+    background-color: #1e1e1e;
+    border-top: 1px solid #00ffaa;
+    flex-direction: column; /* Arrange items in a column */
+    align-items: flex-start; /* Align items to the start of the container */
+}
+footer button {
+    width: 30%;
+}
+
+input, button {
+    background-color: #00ffaa;
+    color: #000000;
+    border: 1px solid #00ffaa;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    width: calc(100% - 22px);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+input #room_id[readonly] {
+    border: 1px solid #00ffaa;
+}
+input::placeholder {
+    color: #707070;
+}
+button:hover {
+    background-color: #00ffff;
+}
+button:disabled {
+    background-color: #aaffff;
+}
+button[value="true"] {
+    background-color: #ff6666;
+    color: white;
+}
+        
+button[value="true"]:hover {
+    background-color: #ff0000;
+}
+
+textarea {
+    width: 70%;
+    height: auto;
+}
+
+#feedback {
+    margin-top: 20px;
+    color: #00ffaa;
+}
