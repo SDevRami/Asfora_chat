@@ -103,4 +103,4 @@ def before_request():
        return redirect(request.url.replace('http://', 'https://', 1))
        
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port=5000)
