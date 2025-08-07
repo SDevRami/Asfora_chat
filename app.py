@@ -95,6 +95,12 @@ def handle_disconnect():
         emit('room_client_list', clients, broadcast=True)
         print(clients)
         emit('feedback', {'message': f"{nickname} has disconnected."}, broadcast=True)
-
+        
+@app.before_request
+def before_request():
+   app.logger.info(f"Incoming request: {request.method} {request.url} Headers: {request.headers}")
+   if request.headers.get('X-Forwarded-Proto') != 'https':
+       return redirect(request.url.replace('http://', 'https://', 1))
+       
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    socketio.run(app)
